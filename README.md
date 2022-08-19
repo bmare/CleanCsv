@@ -6,6 +6,27 @@ Dirty data is painful to load into a database. Often times data exported from an
 
 There are many great tools out there that could deal with this problem, but they often involve loading the csv data into memory, cleaning it, and then writing that cleaned data to the database. CleanCsv aims to overcome this problem by streaming the csv data into the database. The program reads csv data into a buffer, cleans it, and copies it to the database, all the while using no memory. This is especially great for remote servers, where memory resources may be especially scarce.
 
+## Installation
+The tool can be installed with pip, or via virtual env.
+### Pip
+For systemwide installation:
+```shell
+git clone https://github.com/bmare/CleanCsv.git
+cd CleanCsv
+python3 -m pip install --editable .
+```
+
+### Virtualenv
+For installation in a virtual environment:
+```shell
+python3 -m pip install virtualenv
+virtualenv .env
+source ./env/bin/activate
+git clone https://github.com/bmare/CleanCsv.git
+cd CleanCsv
+python3 -m pip install --editable .
+```
+
 ## Usage
 So you've obtained a csv file of some cool data you'd like to load into a database, great! CleanCsv hopes to get this data into the database as quickly as possible. To do that we need to take the following steps:
 1. Create a scheam for the table we will load our data into
