@@ -1,0 +1,21 @@
+{
+    "tblAppeal.csv": "appeal",
+    "tbl_CasePriorityHistory.csv": "casepriority",
+    "D_TblAssociatedBond.csv": "bond",
+    "B_TblProceedCharges.csv": "charges",
+    "tbl_Court_Motions.csv": "motions",
+    "B_TblProceeding.csv": "proceeding",
+    "tbl_EOIR_Attorney.csv": "atty",
+    "tblThreeMbrReferrals.csv": "threembr",
+    "tbl_Court_Appln.csv": "application",
+    "tblAppealFedCourts.csv": "fedcourts",
+    "tbl_JuvenileHistory.csv": "juvenile",
+    "tbl_Lead_Rider.csv": "rider",
+    "tbl_RepsAssigned.csv": "representative",
+    "A_TblCaseIdentifier.csv": "case_id",
+    "tblAppeal2.csv": "appeal2",
+    "A_TblCase.csv": "case",
+    "tblProBono.csv": "probono",
+    "tbl_CustodyHistory.csv": "custody",
+    "tbl_schedule.csv": "schedule"
+}

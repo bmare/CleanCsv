@@ -6,8 +6,8 @@ setup(
     py_modules=['cli', 'cleancsv'],
     install_requires=[
         'Click',
-        'psycopg2',
-        'sqlalchemy'
+        'psycopg2'
+        # 'sqlalchemy'
     ],
     entry_points={
         'console_scripts': [
