@@ -6,6 +6,8 @@ __pycache__/
 # Ignore Password file
 .pgpass
 
+config.json
+
 .env
 
 # Installed Packages

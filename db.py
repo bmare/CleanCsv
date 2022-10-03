@@ -1,42 +1,3 @@
-import psycopg2
-from typing import Iterator, Dict, Any
-import io
-from contextlib import contextmanager
-from config import ROOT_DIR
-
-
-@contextmanager
-def open_db():
-    conn = psycopg2.connect(
-        host="localhost",
-        database="eoirdiscovery_test",
-        user="eoirdiscovery",
-        password='devpassword',
-    )
-    try:
-        curs = conn.cursor()
-        yield curs
-    except Exception as error:
-        print(error)
-    finally:
-        conn.commit()
-        conn.close()
-
-def get_table_dtypes(table) -> list:
-    """
-    Given table name, return list of ordered datatypes
-    """
-    with open_db() as cursor:
-        cursor.execute(f"""
-            SELECT data_type
-            FROM information_schema.columns
-            WHERE table_name = '{table}'
-            ORDER BY ordinal_position;
-        """)
-        dtypes = cursor.fetchall()
-        return [dtypes[i][0] for i in range(len(dtypes))] #unnest the tuples
-
-
 def create_case_table(cursor) -> None:
     cursor.execute("""
         DROP TABLE IF EXISTS eoir_case;
@@ -532,31 +493,4 @@ def create_threembr_table(cursor) -> None:
             datRemovedFromReferral          TIMESTAMP
         );
     """)
-
-def get_row(cursor, table='eoir_case', column='idncase', value='0') -> list:
-    cursor.execute(f"""
-            SELECT *
-            FROM {table}
-            WHERE {column} = {value};
-    """)
-    return cursor.fetchall()
-
-def get_table_name(file):
-    """
-    Given .csv file, returns table name
-    """
-    tables = json.load(open(f"{DB_DIR}/tables.json"))
-    if os.path.basename(file) in tables:
-        return tables[str(os.path.basename(file))]
-    else:
-        pass
-
-
-def map_file_table(self):
-    """Create json with file names as keys, table names as value"""
-    foia_month = f"{FOIA_DIR}/2022-May"
-    with open(f"{foia_month}/tables.json", 'w', encoding = 'utf-8') as f:
-        i = zip([os.path.basename(fname) for fname in os.scandir(foia_month)], ['']*len(list(os.scandir(foia_month))))
-        json.dump(dict(i), f, ensure_ascii=False, indent=4)
-
 
