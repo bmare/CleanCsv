@@ -6,7 +6,8 @@ setup(
     py_modules=['cli', 'cleancsv'],
     install_requires=[
         'Click',
-        'psycopg2'
+        'psycopg2',
+        'IPython' # DEBUG
         # 'sqlalchemy'
     ],
     entry_points={

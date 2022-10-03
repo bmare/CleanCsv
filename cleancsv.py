@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from datetime import datetime, time
 from typing import Iterator, Optional
 
-from definitions import ROOT_DIR
+from config import ROOT_DIR
 
 @contextmanager
 def open_db(connection):

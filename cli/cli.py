@@ -3,9 +3,7 @@ import click
 from cleancsv import *
 
 @click.group(chain=True)
-@click.option('--database', default=None, help='PostgreSQL database name',
-              prompt='Please enter the PostgreSQL database name')
-@click.option('--user', default=f"{os.environ.get('USER')}", help='PostgreSQL database user', #[ANKI]
+@click.option('--user', default=f"{os.environ.get('USER')}", help='PostgreSQL database user',
               prompt='Please enter the PostgreSQL database user')
 @click.option('--password', default='password', help='PostgreSQL database password',
               prompt='Please enter the PostgreSQL database password')
@@ -13,33 +11,32 @@ from cleancsv import *
              prompt='Please enter the PostgreSQL database host')
 @click.option('--port', default=5432, help='PostgreSQL database port',
               prompt='Please enter the PostgreSQL database port')
-@click.option('--create', default=None, help='create database or connect to preexisting database')
+@click.option('--database', default=None, help='PostgreSQL database name',
+              prompt='Name of preexisting database or database to create.')
 @click.pass_context
-def cli(ctx, database, user, password, host, port, create):
+def cli(ctx, database, user, password, host, port):
     try:
-        if database:
-            connection = psycopg2.connect(database=database, user=user, \
-                                          password=password, host=host, port=port)
-        else:
-            connection = psycopg2.connect(user=user, password=password, host=host, port=port)
-            curs = conn.cursor()
-            database = click.prompt("Enter the name for the database you want to create", type=str)
-            curs.execute(f"CREATE DATABASE {database};")
-
-        ctx.obj = {
-            "connection": connection,
-            "database": database,
-            "username": user,
-            "password": password,
-            "host": host,
-            "port": str(port)
-        }
+        connection = connect_db(**ctx.params)
+        ctx.obj = {"connection": connection, **ctx.params}
 
     except psycopg2.Error as e:
-        click.echo("Could not connect to the database")
-        click.echo(e.pgerror)
-        sys.exit(1)
+        database = ctx.params.pop('database')
+        connection = connect_db(**ctx.params) 
 
+        click.echo(f"Could not connect to the database. Creating database {database}")
+        curs = conn.cursor()
+        curs.execute(f"CREATE DATABASE {database};")
+
+        connection = connect_db(database=database, **ctx.params)
+        ctx.obj = {"connection": connection, **ctx.params}
+        import IPython; IPython.embed()
+
+def connect_db(user, password, host, port, database=None):
+    if database:
+        return psycopg2.connect(user=user, password=password, \
+                                      database=database, host=host, port=port)
+    else:
+        return psycopg2.connect(user=user, password=password, host=host, port=port)
 
 @cli.command
 @click.argument('target')
