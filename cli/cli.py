@@ -72,7 +72,7 @@ def cli(ctx, user, password, config):
         configure(ctx.params)
     else:
         try:
-            ctx.obj = {'username': user, 'password': password}
+            ctx.obj = {'user': user, 'password': password}
             ctx.obj.update(load_config()) #add config variables to context
             connection = connect_db(**ctx.obj)
         except (json.JSONDecodeError, psycopg2.Error) as e:
