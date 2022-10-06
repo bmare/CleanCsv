@@ -14,7 +14,7 @@
     "tbl_RepsAssigned.csv": "representative",
     "A_TblCaseIdentifier.csv": "case_id",
     "tblAppeal2.csv": "appeal2",
-    "A_TblCase.csv": "case",
+    "A_TblCase.csv": "eoir_case",
     "tblProBono.csv": "probono",
     "tbl_CustodyHistory.csv": "custody",
     "tbl_schedule.csv": "schedule"
