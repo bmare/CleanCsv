@@ -6,6 +6,9 @@ __pycache__/
 # Ignore Password file
 .pgpass
 
+*.csv
+bad-rows/
+
 config.json
 
 .env
