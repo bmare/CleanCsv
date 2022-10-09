@@ -15,7 +15,7 @@ def open_db():
     Usage: with open_db() as curs:
     :yields curs
     """
-    conn = psycopg2.connect(user='postgres', password='', host='localhost', port='5432', database='testload')
+    conn = psycopg2.connect(user='postgres', password='***REMOVED***', host='localhost', port='5432', database='testload')
     try:
         curs = conn.cursor()
         yield curs
@@ -24,9 +24,6 @@ def open_db():
     finally:
         conn.commit()
         conn.close()
-
-def get_conn():
-    return psycopg2.connect(user='postgres', password='***REMOVED***', host='localhost', port='5432', database='eoir_foia')
 
 @contextmanager
 def get_reader_writer(file, rw:str):
@@ -58,6 +55,7 @@ class CleanCsv:
         self.js_name = f"{JSON_DIR}/{self.name.replace('.csv', '.json')}"
         self.no_nul = os.path.abspath(self.csvfile).replace('.csv', '_no_nul.csv')
         self.bad_row = os.path.abspath(self.csvfile).replace('.csv', '_br.csv')
+        self.row_count = 0
         try:
             with open(f"{JSON_DIR}/tables.json", 'r') as f:
                 self.table = json.load(f)[self.name]
@@ -117,6 +115,8 @@ class CleanCsv:
                     yield self.clean_row(row)
                 elif len(row) < self.header_length:
                     yield self.clean_row(self.add_extra_cols(row))
+            else:
+                self.row_count = i
 
     def get_bad_rows(self) -> list:
         """
@@ -224,10 +224,6 @@ class CleanCsv:
                     return row_copy
                 else:
                     pass
-                    # try:
-                    #     self.shift_values(row_copy)
-                    # except RecursionError:
-                    #     break
             
 
     def remove_extra_cols(self, row) -> list:
@@ -311,16 +307,24 @@ class CleanCsv:
                 if row[0] == lineno:
                     return row
 
-    def lookup_strange_value(self, value='') -> list:
+    def get_bad_row(self, value:str,column:str) -> list:
         """
+        When PostgreSQL copy_from fails, it may give helpful context on the line that failed.
+        You can use the first value in that bad row as the lineno to look up a bad line
         """
+        _bad_rows = []
+        index = list(self.dtypes.keys()).index(column)
         with open(self.no_nul, 'r', newline='', encoding='utf-8', errors='replace') as f:
-            count = 0
             for i, row in enumerate(csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)):
-                if value in row:
-                    count+=1
-                    print(row)
-            print(f"Byte '{value}' appeared in {count} rows.")
+                try:
+                    if row[index] == value:
+                        print(f"Bad value located in row {i}: {row}")
+                        _bad_rows.append(row)
+                except IndexError:
+                    continue
+                    # As of now short rows will throw an index error.
+        return _bad_rows
+
 
 
     def get_codes(self) -> dict:

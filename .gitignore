@@ -7,7 +7,7 @@ __pycache__/
 .pgpass
 
 *.csv
-bad-rows/
+bad-rowsear
 
 config.json
 
