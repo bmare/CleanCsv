@@ -15,7 +15,7 @@ def open_db():
     Usage: with open_db() as curs:
     :yields curs
     """
-    conn = psycopg2.connect(user='postgres', password='***REMOVED***', host='localhost', port='5432', database='testload')
+    conn = psycopg2.connect(user='postgres', password='', host='localhost', port='5432', database='testload')
     try:
         curs = conn.cursor()
         yield curs
@@ -96,21 +96,26 @@ class CleanCsv:
     def csv_gen(self) -> list:
         """
         Create a generator from csv file that yields cleaned and formatted rows. 
-        This is where handling of short or long rows are handled. Rows are added
+        This is where handling of short or long rows occurs. Rows are added
         to short rows. Rows are removed from long rows if they are empty. If extra
         columns in long rows are not empty, the program attempts to remove values
         that would align the rows to the data types specified in the dtype file.
         """
+        sneaky_rows = []
         with open(self.no_nul, 'r', newline='', encoding='utf-8', errors='replace') as f:
             for i, row in enumerate(csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)):
                 if i == 0:
                     continue # skip header row
                 elif len(row) > self.header_length:
-                    clean_extra = self.remove_extra_cols(row)
-                    if clean_extra:
-                        yield self.clean_row(clean_extra)
+                    _bad_vals = self.get_bad_values(row)
+                    if _bad_vals:
+                        copy=self.shift_values(row)
+                        if not self.get_bad_values(copy):
+                            yield self.clean_row(copy)
                     else:
-                        continue # [TODO] Fix bad header
+                        clean_extra = self.remove_extra_cols(row)
+                        if clean_extra:
+                            yield self.clean_row(clean_extra)
                 elif len(row) == self.header_length:
                     yield self.clean_row(row)
                 elif len(row) < self.header_length:
