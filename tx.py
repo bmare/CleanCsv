@@ -494,3 +494,23 @@ def create_threembr_table(cursor) -> None:
         );
     """)
 
+create_tx_functions = {
+        'appeal':create_appeal_table,
+        'appln':create_appln_table,
+        'atty':create_atty_table,
+        'bond':create_bond_table,
+        'case':create_case_table,
+        'caseid':create_caseid_table,
+        'casepriority':create_casepriority_table,
+        'charges':create_charges_table,
+        'custody':create_custody_table,
+        'fedcourts':create_fedcourts_table,
+        'juvenile':create_juvenile_table,
+        'motion':create_motion_table,
+        'probono':create_probono_table,
+        'proceeding':create_proceeding_table,
+        'reps':create_reps_table,
+        'rider':create_rider_table,
+        'schedule':create_schedule_table,
+        'threembr':create_threembr_table
+         } #[ANKI]
