@@ -45,5 +45,3 @@ cleancsv copy-files ./path-to-eoir-foia-files
 ```
 Depending on your machine, some of these files will take a while to copy to the database.
 
-## Live Footage
-![](cleancsv.gif)
