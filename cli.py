@@ -58,11 +58,13 @@ def createdb(obj, new):
 @click.argument('path')
 @click.pass_obj
 def copy_files(obj, path):
-    files_to_copy=[file for file in os.scandir(path) if os.path.basename(file).endswith('.csv') and click.confirm(f'Copy file {os.path.basename(file)} to the database')]
+    files_to_copy=[file for file in os.scandir(path) \
+                   if os.path.basename(file).endswith('.csv') \
+                   and click.confirm(f'Copy file {os.path.basename(file)} to the database')]
     for file in files_to_copy:
-        csv = CleanCsv(os.path.abspath(file))
-        csv.replace_nul()
-        csv.copy_to_table()
+        _csv = CleanCsv(os.path.abspath(file))
+        _csv.replace_nul()
+        _csv.copy_to_table()
 
 cli.add_command(configure)
 cli.add_command(createdb)
