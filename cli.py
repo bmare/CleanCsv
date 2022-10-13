@@ -43,23 +43,30 @@ def configure(obj):
 def createdb(obj, new):
     if new:
         obj['database'] = new
-    try:
-        conn_args = {key:value for key, value in obj.items() if key != 'database'}
-        conn = psycopg2.connect(**conn_args)
-        conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) # Create database cannot run inside a transaction block
-        with open_db(conn) as curs:
-            curs.execute(f"CREATE DATABASE {obj['database']}")
-            import IPython; IPython.embed() #[TODO] Tables are not being created. Was able to create them, from embedding IPython here.
-            for tx_name, create in create_tx_functions.items():
-                create(curs)
-                click.echo(f"Created {tx_name} table")
+    conn_args = {key:value for key, value in obj.items() if key != 'database'}
+    conn = psycopg2.connect(**conn_args)
+    conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) # Create database cannot run inside a transaction block
+    with open_db(conn) as curs:
+        curs.execute(f"CREATE DATABASE {obj['database']}")
 
-    except psycopg2.Error as e:
-        click.echo("Unable to connect to the database. Check that you've entered the proper credentials.")
-        click.echo(e)
+    with open_db(psycopg2.connect(**obj)) as curs:
+        for tx_name, create in create_tx_functions.items():
+            create(curs)
+            click.echo(f"Created {tx_name} table")
+
+@cli.command()
+@click.argument('path')
+@click.pass_obj
+def copy_files(obj, path):
+    files_to_copy=[file for file in os.scandir(path) if os.path.basename(file).endswith('.csv') and click.confirm(f'Copy file {os.path.basename(file)} to the database')]
+    for file in files_to_copy:
+        csv = CleanCsv(os.path.abspath(file))
+        csv.replace_nul()
+        csv.copy_to_table()
 
 cli.add_command(configure)
 cli.add_command(createdb)
+cli.add_command(copy_files)
 
 
 
