@@ -12,7 +12,7 @@ from tx import *
 @click.option('--password', default='password', help='PostgreSQL database password',
               hide_input=True, prompt='Please enter the PostgreSQL database password')
 @click.pass_context
-def cli(ctx, user, password):
+def cli1(ctx, user, password):
     try:
         ctx.obj = {'user': user, 'password': password}
         ctx.obj.update(json.load(open(CONFIG_FILE))) #add config variables to context
@@ -20,7 +20,7 @@ def cli(ctx, user, password):
         click.echo("""It appears the database connection hasn't been configured. Try Running cleancsv cli configure""")
         sys.exit(1)
 
-@cli.command()
+@cli1.command()
 @click.pass_obj
 def configure(obj):
     _config = {
@@ -36,7 +36,7 @@ def configure(obj):
     except Error as e:
         click.echo(e)
 
-@cli.command()
+@cli1.command()
 @click.option('--new', default=None, help="Specify database name different from that in config file.")
 @click.pass_obj
 def createdb(obj, new):
@@ -60,7 +60,7 @@ def createdb(obj, new):
             create(curs)
             click.echo(f"Created {tx_name} table")
 
-@cli.command()
+@cli1.command()
 @click.argument('path')
 @click.pass_obj
 def copy_files(obj, path):
@@ -76,9 +76,28 @@ def copy_files(obj, path):
         _csv.del_no_nul()
         click.echo(f"Copied {_csv.row_count} rows to {obj['database']}")
 
-cli.add_command(configure)
-cli.add_command(createdb)
-cli.add_command(copy_files)
+@click.group()
+def cli2():
+    pass
+
+@cli2.command()
+@click.argument('foia_files')
+def to_csv(foia_files):
+    files_to_clean=[file for file in os.scandir(foia_files) \
+                   if os.path.basename(file).endswith('.csv') \
+                   and click.confirm(f'Clean file {os.path.basename(file)}?')]
+    for file in files_to_clean:
+        _csv = CleanCsv(os.path.abspath(file))
+        _csv.replace_nul()
+        click.echo(f"Cleaning {os.path.abspath(file)}")
+        _csv.write_to_csv()
+        _csv.del_no_nul()
+        click.echo(f"Cleaned {_csv.row_count}")
+
+cli = click.CommandCollection(sources=[cli1, cli2])
+# cli.add_command(configure)
+# cli.add_command(createdb)
+# cli.add_command(copy_files)
 
 
 
