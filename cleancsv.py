@@ -16,6 +16,7 @@ class CleanCsv:
         self.js_name = f"{JSON_DIR}/{self.name.replace('.csv', '.json')}"
         self.no_nul = os.path.abspath(self.csvfile).replace('.csv', '_no_nul.csv')
         self.bad_row = os.path.abspath(self.csvfile).replace('.csv', '_br.csv') #[DEBUG]
+        self.cleaned = os.path.abspath(self.csvfile).replace('.csv', '_cleaned.csv') #[DEBUG]
         self.row_count = 0
         try:
             with open(f"{JSON_DIR}/tables.json", 'r') as f:
@@ -35,6 +36,10 @@ class CleanCsv:
             iter_csv = StringIteratorIO(iter(self.csv_gen()))
             curs.copy_from(iter_csv, table, sep='|', null='\\N', size=8192)
 
+    def write_to_csv(self):
+        with open(self.cleaned, 'w') as f:
+            for row in self.csv_gen(skip_header=False):
+                f.write(row)
 
     def replace_nul(self) -> None:
         """
@@ -54,7 +59,7 @@ class CleanCsv:
         os.remove(self.no_nul)
     
 
-    def csv_gen(self) -> list:
+    def csv_gen(self, skip_header=True) -> list:
         """
         Create a generator from csv file that yields cleaned and formatted rows. 
         This is where handling of short or long rows occurs. Rows are added
@@ -65,8 +70,10 @@ class CleanCsv:
         sneaky_rows = []
         with open(self.no_nul, 'r', newline='', encoding='utf-8', errors='replace') as f:
             for i, row in enumerate(csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)):
-                if i == 0:
+                if i == 0 and skip_header:
                     continue # skip header row
+                elif i==0 and not skip_header:
+                    yield '|'.join(self.header) + '\n'
                 elif len(row) > self.header_length:
                     _bad_vals = self.get_bad_values(row)
                     if _bad_vals:
