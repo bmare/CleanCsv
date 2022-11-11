@@ -26,18 +26,18 @@ cd CleanCsv
 python3 -m pip install --editable .
 ```
 
-## Usage
+## Usage with Database
 To list the available commands run:
 ```shell
 cleancsv --help
 ```
 To configure the database, you will need the postgres username, password, host, port, and database name. 
 ```shell
-cleancsv configure
+cleancsv db configure
 ```
 Now you can create the db. If you don't want to come up with a name, a database named 'eoir_foia' will be created. Alternatively, you can use the `--new` option.
 ```shell
-cleancsv createdb
+cleancsv db createdb
 ```
 To copy the files to the database run:
 ```shell
@@ -45,3 +45,8 @@ cleancsv copy-files ./path-to-eoir-foia-files
 ```
 Depending on your machine, some of these files will take a while to copy to the database.
 
+## Writing Cleaned CSVs
+If you want to just write a cleaned csv that might be easier to process in Pandas, use the following command:
+```shell
+cleancsv csv ./path-to-eoir-foia-files
+```
