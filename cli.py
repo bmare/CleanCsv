@@ -1,103 +1,49 @@
-import os, json
+import os
 
-import click, psycopg2
-from definitions import ROOT_DIR, JSON_DIR, CONFIG_FILE
-from cleancsv import CleanCsv
-from utils import open_db
-from tx import *
+import click
 
-@click.group(chain=True)
-@click.option('--user', default=f"{os.environ.get('USER')}", help='PostgreSQL database user',
-              prompt='Please enter the PostgreSQL database user')
-@click.option('--password', default='password', help='PostgreSQL database password',
-              hide_input=True, prompt='Please enter the PostgreSQL database password')
-@click.pass_context
-def cli1(ctx, user, password):
-    try:
-        ctx.obj = {'user': user, 'password': password}
-        ctx.obj.update(json.load(open(CONFIG_FILE))) #add config variables to context
-    except (json.JSONDecodeError, psycopg2.Error) as e:
-        click.echo("""It appears the database connection hasn't been configured. Try Running cleancsv cli configure""")
-        sys.exit(1)
+cmd_folder = os.path.join(os.path.dirname(__file__), 'commands')
+cmd_prefix = 'cmd_'
 
-@cli1.command()
-@click.pass_obj
-def configure(obj):
-    _config = {
-            'host': click.prompt("Enter host name", default='localhost'),
-            'port': click.prompt('PostgreSQL database port', default=5432),
-            'database': click.prompt('PostgreSQL database name', default='eoir_foia')
-            }
-    obj.update(_config)
-    try:
-        with open(CONFIG_FILE, 'w') as f:
-            json.dump(_config, f, ensure_ascii=False, indent=4)
-        click.echo("Configuration complete.")
-    except Error as e:
-        click.echo(e)
 
-@cli1.command()
-@click.option('--new', default=None, help="Specify database name different from that in config file.")
-@click.pass_obj
-def createdb(obj, new):
-    if new:
-        obj['database'] = new
-    conn_args = {key:value for key, value in obj.items() if key != 'database'}
-    conn = psycopg2.connect(**conn_args)
-    conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT) # Create database cannot run inside a transaction block
+class CLI(click.MultiCommand):
+    def list_commands(self, ctx):
+        """
+        Obtain a list of all available commands.
 
-    with open_db(conn) as curs:
-        curs.execute(f"CREATE DATABASE {obj['database']}")  
+        :param ctx: Click context
+        :return: List of sorted commands
+        """
+        commands = []
 
-    #Update the config file
-    old_config = json.load(open(CONFIG_FILE))   
-    with open(CONFIG_FILE, 'w') as f:
-        old_config['database'] = obj['database']
-        json.dump(old_config, f, ensure_ascii=False, indent=4)
+        for filename in os.listdir(cmd_folder):
+            if filename.endswith('.py') and filename.startswith(cmd_prefix):
+                commands.append(filename[4:-3])
 
-    with open_db(psycopg2.connect(**obj)) as curs:
-        for tx_name, create in create_tx_functions.items():
-            create(curs)
-            click.echo(f"Created {tx_name} table")
+        commands.sort()
 
-@cli1.command()
-@click.argument('path')
-@click.pass_obj
-def copy_files(obj, path):
-    files_to_copy=[file for file in os.scandir(path) \
-                   if os.path.basename(file).endswith('.csv') \
-                   and click.confirm(f'Copy file {os.path.basename(file)} to the database')]
-    for file in files_to_copy:
-        # import IPython; IPython.embed()
-        _csv = CleanCsv(os.path.abspath(file))
-        _csv.replace_nul()
-        click.echo(f"Copying {os.path.abspath(file)} to {obj['database']}")
-        _csv.copy_to_table(psycopg2.connect(**obj))
-        _csv.del_no_nul()
-        click.echo(f"Copied {_csv.row_count} rows to {obj['database']}")
+        return commands
 
-@click.group()
-def cli2():
+    def get_command(self, ctx, name):
+        """
+        Get a specific command by looking up the module.
+
+        :param ctx: Click context
+        :param name: Command name
+        :return: Module's cli function
+        """
+        ns = {}
+
+        filename = os.path.join(cmd_folder, cmd_prefix + name + '.py')
+
+        with open(filename) as f:
+            code = compile(f.read(), filename, 'exec')
+            eval(code, ns, ns)
+
+        return ns['cli']
+
+
+@click.command(cls=CLI)
+def cli():
+    """ Commands to help manage your project. """
     pass
-
-@cli2.command()
-@click.argument('foia_files')
-def to_csv(foia_files):
-    files_to_clean=[file for file in os.scandir(foia_files) \
-                   if os.path.basename(file).endswith('.csv') \
-                   and click.confirm(f'Clean file {os.path.basename(file)}?')]
-    for file in files_to_clean:
-        _csv = CleanCsv(os.path.abspath(file))
-        _csv.replace_nul()
-        click.echo(f"Cleaning {os.path.abspath(file)}")
-        _csv.write_to_csv()
-        _csv.del_no_nul()
-        click.echo(f"Cleaned {_csv.row_count}")
-
-cli = click.CommandCollection(sources=[cli1, cli2])
-# cli.add_command(configure)
-# cli.add_command(createdb)
-# cli.add_command(copy_files)
-
-
-
