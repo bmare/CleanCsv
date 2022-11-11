@@ -1,4 +1,4 @@
-import os, json
+import os, json, sys
 
 import click, psycopg2
 from definitions import ROOT_DIR, JSON_DIR, CONFIG_FILE
@@ -16,8 +16,9 @@ def cli(ctx, user, password):
     try:
         ctx.obj = {'user': user, 'password': password}
         ctx.obj.update(json.load(open(CONFIG_FILE))) #add config variables to context
-    except (json.JSONDecodeError, psycopg2.Error) as e:
+    except (json.JSONDecodeError, psycopg2.Error, FileNotFoundError) as e:
         click.echo("""It appears the database connection hasn't been configured. Try Running cleancsv cli configure""")
+        click.echo(e) #DEBUG
         sys.exit(1)
 
 @cli.command()
