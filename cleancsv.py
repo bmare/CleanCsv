@@ -18,6 +18,7 @@ class CleanCsv:
         self.bad_row = os.path.abspath(self.csvfile).replace('.csv', '_br.csv') #[DEBUG]
         self.cleaned = os.path.abspath(self.csvfile).replace('.csv', '_cleaned.csv') #[DEBUG]
         self.row_count = 0
+        self.empty_pk = 0
         try:
             with open(f"{JSON_DIR}/tables.json", 'r') as f:
                 self.table = json.load(f)[self.name]
@@ -67,10 +68,12 @@ class CleanCsv:
         columns in long rows are not empty, the program attempts to remove values
         that would align the rows to the data types specified in the dtype file.
         """
-        sneaky_rows = []
         with open(self.no_nul, 'r', newline='', encoding='utf-8', errors='replace') as f:
             for i, row in enumerate(csv.reader(f, delimiter='\t', quoting=csv.QUOTE_NONE)):
-                if i == 0 and skip_header:
+                if self.is_nul_like(row[0]):
+                    self.empty_pk+=1
+                    continue
+                elif i == 0 and skip_header:
                     continue # skip header row
                 elif i==0 and not skip_header:
                     yield '|'.join(self.header) + '\n'
